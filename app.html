@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lauren Liv — ניהול</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #0A0A0A;
+      --white: #FFFFFF;
+      --gray-50: #FAFAFA;
+      --gray-100: #F4F4F5;
+      --gray-200: #E4E4E7;
+      --gray-300: #D4D4D8;
+      --gray-400: #A1A1AA;
+      --gray-500: #71717A;
+      --gray-600: #52525B;
+      --gray-700: #3F3F46;
+      --gray-800: #27272A;
+      --green: #16A34A;
+      --green-light: #DCFCE7;
+      --red: #DC2626;
+      --red-light: #FEE2E2;
+      --amber: #B45309;
+      --amber-light: #FEF3C7;
+      --font: 'Heebo', sans-serif;
+      --sidebar-width: 260px;
+    }
+
+    html, body, #root { height: 100%; font-family: var(--font); background: var(--gray-50); color: var(--black); direction: rtl; }
+
+    /* Layout */
+    .app-layout { display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--black); color: var(--white);
+      display: flex; flex-direction: column; padding: 36px 0 24px; flex-shrink: 0; order: -1;
+    }
+    .sidebar-brand { padding: 0 28px 32px; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 16px; }
+    .sidebar-brand-name { font-size: 19px; font-weight: 800; letter-spacing: -0.4px; }
+    .sidebar-brand-tag { display: inline-block; margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.35); }
+    .sidebar-nav { flex: 1; padding: 8px 16px; display: flex; flex-direction: column; gap: 2px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 10px;
+      cursor: pointer; font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.5);
+      border: none; background: transparent; width: 100%; text-align: right; font-family: var(--font);
+      transition: background 0.15s, color 0.15s;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.07); color: var(--white); }
+    .nav-item.active { background: rgba(255,255,255,0.13); color: var(--white); }
+    .nav-icon { font-size: 15px; opacity: 0.7; flex-shrink: 0; }
+    .nav-item.active .nav-icon { opacity: 1; }
+    .sidebar-footer { padding: 0 28px; font-size: 11px; color: rgba(255,255,255,0.18); }
+
+    /* Main */
+    .main-content { flex: 1; overflow-y: auto; padding: 44px 52px; }
+
+    /* Page Header */
+    .page-header { margin-bottom: 36px; }
+    .page-title { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+    .page-subtitle { font-size: 14px; color: var(--gray-500); margin-top: 5px; }
+    .page-header-row { display: flex; justify-content: space-between; align-items: flex-start; }
+
+    /* Card */
+    .card { background: var(--white); border-radius: 16px; border: 1px solid var(--gray-200); padding: 24px; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+    .stat-card { background: var(--white); border-radius: 16px; border: 1px solid var(--gray-200); padding: 22px 24px; }
+    .stat-card.black { background: var(--black); border-color: var(--black); }
+    .stat-label { font-size: 12px; font-weight: 500; color: var(--gray-400); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card.black .stat-label { color: rgba(255,255,255,0.4); }
+    .stat-value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+    .stat-card.black .stat-value { color: var(--white); }
+    .stat-value.green { color: var(--green); }
+    .stat-value.red { color: var(--red); }
+    .stat-meta { font-size: 12px; color: var(--gray-400); margin-top: 6px; }
+
+    /* Badges */
+    .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+    .badge-pending { background: var(--amber-light); color: var(--amber); }
+    .badge-approved { background: var(--black); color: var(--white); }
+    .badge-rejected { background: var(--red-light); color: var(--red); }
+
+    /* Tables */
+    .table-wrapper { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { text-align: right; padding: 10px 14px; font-size: 11px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--gray-100); }
+    tbody tr { border-bottom: 1px solid var(--gray-100); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--gray-50); }
+    tbody td { padding: 15px 14px; font-size: 14px; color: var(--gray-600); }
+    .td-bold { font-weight: 600; color: var(--black); }
+    .td-desc { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--gray-400); }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 9px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.13s; border: none; font-family: var(--font); line-height: 1; }
+    .btn-primary { background: var(--black); color: var(--white); }
+    .btn-primary:hover { background: var(--gray-800); }
+    .btn-outline { background: transparent; color: var(--black); border: 1.5px solid var(--gray-200); }
+    .btn-outline:hover { border-color: var(--gray-400); background: var(--gray-50); }
+    .btn-ghost { background: transparent; color: var(--gray-400); border: none; padding: 6px 9px; border-radius: 7px; font-family: var(--font); cursor: pointer; font-size: 14px; transition: all 0.13s; }
+    .btn-ghost:hover { color: var(--black); background: var(--gray-100); }
+    .btn-danger { background: transparent; color: var(--gray-300); border: none; padding: 6px 9px; border-radius: 7px; cursor: pointer; font-size: 13px; font-family: var(--font); transition: all 0.13s; }
+    .btn-danger:hover { color: var(--red); background: var(--red-light); }
+
+    /* Section Header */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .section-title { font-size: 15px; font-weight: 600; }
+
+    /* Filter Tabs */
+    .filter-tabs { display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; }
+    .filter-tab { padding: 6px 15px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1.5px solid var(--gray-200); background: transparent; color: var(--gray-500); transition: all 0.13s; font-family: var(--font); }
+    .filter-tab:hover { border-color: var(--gray-400); color: var(--black); }
+    .filter-tab.active { background: var(--black); color: var(--white); border-color: var(--black); }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px; backdrop-filter: blur(2px); }
+    .modal { background: var(--white); border-radius: 20px; padding: 32px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,0.15); }
+    .modal-title { font-size: 19px; font-weight: 700; margin-bottom: 24px; letter-spacing: -0.3px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-500); margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .form-control { width: 100%; padding: 10px 13px; border: 1.5px solid var(--gray-200); border-radius: 9px; font-size: 14px; font-family: var(--font); color: var(--black); background: var(--white); transition: border-color 0.15s; direction: rtl; }
+    .form-control:focus { outline: none; border-color: var(--black); }
+    .form-control::placeholder { color: var(--gray-300); }
+    textarea.form-control { resize: vertical; min-height: 90px; }
+    select.form-control { cursor: pointer; }
+    .form-actions { display: flex; gap: 10px; margin-top: 26px; }
+
+    /* Finances */
+    .finances-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    .finance-total { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin: 14px 0 4px; }
+    .finance-total.green { color: var(--green); }
+    .finance-total.red { color: var(--red); }
+    .finance-count { font-size: 12px; color: var(--gray-400); margin-bottom: 18px; }
+    .divider { height: 1px; background: var(--gray-100); margin: 4px 0 12px; }
+    .finance-item { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--gray-100); }
+    .finance-item:last-child { border-bottom: none; }
+    .finance-item-info { flex: 1; min-width: 0; }
+    .finance-item-name { font-size: 14px; font-weight: 500; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .finance-item-date { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+    .finance-item-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-right: 12px; }
+    .finance-amount { font-size: 14px; font-weight: 600; white-space: nowrap; }
+    .finance-amount.green { color: var(--green); }
+    .finance-amount.red { color: var(--red); }
+
+    /* Net Banner */
+    .net-banner { background: var(--black); color: var(--white); border-radius: 16px; padding: 22px 28px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .net-banner-label { font-size: 12px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .net-banner-value { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+    .net-banner-stats { display: flex; gap: 36px; }
+    .net-stat-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .net-stat-value { font-size: 16px; font-weight: 600; }
+
+    /* Empty State */
+    .empty-state { text-align: center; padding: 52px 20px; }
+    .empty-icon { font-size: 32px; margin-bottom: 10px; }
+    .empty-text { font-size: 14px; color: var(--gray-400); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="module">
+import { h, render } from 'https://esm.sh/preact@10.19.3'
+import { useState, useEffect } from 'https://esm.sh/preact@10.19.3/hooks'
+import htm from 'https://esm.sh/htm@3.1.1'
+const html = htm.bind(h)
+
+// ── Utilities ──────────────────────────────────────────────────────
+const STORAGE_KEY = 'lauren-mgmt-v1'
+const DEFAULT_DATA = { proposals: [], incomes: [], expenses: [] }
+
+const fmt = (amount) =>
+  new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS', maximumFractionDigits: 0 }).format(amount)
+
+const today = () => new Date().toISOString().split('T')[0]
+
+const STATUS_LABELS = { pending: 'ממתין', approved: 'אושר', rejected: 'נדחה' }
+const STATUS_CLASSES = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' }
+
+// ── Sidebar ────────────────────────────────────────────────────────
+function Sidebar({ activeTab, setActiveTab }) {
+  const nav = [
+    { id: 'dashboard', label: 'דשבורד', icon: '⊞' },
+    { id: 'proposals', label: 'הצעות',  icon: '◈' },
+    { id: 'finances',  label: 'כספים',  icon: '◎' },
+  ]
+  return html`
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-name">Lauren Liv</div>
+        <span class="sidebar-brand-tag">ניהול סושיאל · עידו בן גיגי</span>
+      </div>
+      <nav class="sidebar-nav">
+        ${nav.map(item => html`
+          <button
+            key=${item.id}
+            class=${'nav-item' + (activeTab === item.id ? ' active' : '')}
+            onClick=${() => setActiveTab(item.id)}
+          >
+            <span class="nav-icon">${item.icon}</span>
+            ${item.label}
+          </button>
+        `)}
+      </nav>
+      <div class="sidebar-footer">© ${new Date().getFullYear()} Lauren Management</div>
+    </aside>
+  `
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────
+function Dashboard({ proposals, incomes, expenses, setActiveTab }) {
+  const totalIncome   = incomes.reduce((s, i) => s + Number(i.amount), 0)
+  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0)
+  const net     = totalIncome - totalExpenses
+  const pending = proposals.filter(p => p.status === 'pending').length
+  const recent  = [...proposals].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5)
+
+  return html`
+    <div>
+      <div class="page-header">
+        <h1 class="page-title">שלום עידו 👋</h1>
+        <p class="page-subtitle">ריכוז כל הפעילות של לורן</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">הכנסות</div>
+          <div class="stat-value green">${fmt(totalIncome)}</div>
+          <div class="stat-meta">${incomes.length} עסקאות</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">הוצאות</div>
+          <div class="stat-value red">${fmt(totalExpenses)}</div>
+          <div class="stat-meta">${expenses.length} עסקאות</div>
+        </div>
+        <div class="stat-card black">
+          <div class="stat-label">רווח נקי</div>
+          <div class="stat-value">${fmt(net)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">הצעות ממתינות</div>
+          <div class="stat-value">${pending}</div>
+          <div class="stat-meta">מתוך ${proposals.length} הצעות</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">
+          <h2 class="section-title">הצעות אחרונות</h2>
+          <button class="btn btn-ghost" style=${{ fontSize: 13 }} onClick=${() => setActiveTab('proposals')}>
+            הצג הכל ←
+          </button>
+        </div>
+        ${recent.length === 0 ? html`
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <div class="empty-text">אין הצעות עדיין — לחץ על "הצעות" כדי להוסיף</div>
+          </div>
+        ` : html`
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>מותג</th><th>פירוט</th><th>סכום</th><th>תאריך</th><th>סטטוס</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${recent.map(p => html`
+                  <tr key=${p.id}>
+                    <td class="td-bold">${p.brand}</td>
+                    <td><div class="td-desc" title=${p.description}>${p.description}</div></td>
+                    <td style=${{ fontWeight: 600 }}>${fmt(p.amount)}</td>
+                    <td style=${{ color: 'var(--gray-500)', fontSize: 13 }}>${new Date(p.date).toLocaleDateString('he-IL')}</td>
+                    <td><span class=${'badge ' + STATUS_CLASSES[p.status]}>${STATUS_LABELS[p.status]}</span></td>
+                  </tr>
+                `)}
+              </tbody>
+            </table>
+          </div>
+        `}
+      </div>
+    </div>
+  `
+}
+
+// ── Proposals ──────────────────────────────────────────────────────
+const EMPTY_PROPOSAL = { brand: '', description: '', amount: '', date: '', status: 'pending' }
+
+function Proposals({ proposals, setProposals }) {
+  const [filter, setFilter]     = useState('all')
+  const [showModal, setShowModal] = useState(false)
+  const [editId, setEditId]     = useState(null)
+  const [form, setForm]         = useState(EMPTY_PROPOSAL)
+
+  const counts = {
+    all:      proposals.length,
+    pending:  proposals.filter(p => p.status === 'pending').length,
+    approved: proposals.filter(p => p.status === 'approved').length,
+    rejected: proposals.filter(p => p.status === 'rejected').length,
+  }
+
+  const filtered = proposals
+    .filter(p => filter === 'all' || p.status === filter)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+
+  const openAdd = () => {
+    setForm({ ...EMPTY_PROPOSAL, date: today() })
+    setEditId(null)
+    setShowModal(true)
+  }
+
+  const openEdit = (p) => {
+    setForm({ brand: p.brand, description: p.description, amount: p.amount, date: p.date, status: p.status })
+    setEditId(p.id)
+    setShowModal(true)
+  }
+
+  const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
+
+  const handleSave = () => {
+    if (!form.brand.trim() || !form.amount || !form.date) return
+    if (editId) {
+      setProposals(proposals.map(p => p.id === editId ? { ...p, ...form, amount: Number(form.amount) } : p))
+    } else {
+      setProposals([...proposals, { id: Date.now().toString(), ...form, amount: Number(form.amount) }])
+    }
+    setShowModal(false)
+  }
+
+  const handleDelete = (id) => {
+    if (window.confirm('למחוק הצעה זו?')) setProposals(proposals.filter(p => p.id !== id))
+  }
+
+  const filterTabs = [
+    { id: 'all',      label: `הכל (${counts.all})` },
+    { id: 'pending',  label: `ממתין (${counts.pending})` },
+    { id: 'approved', label: `אושר (${counts.approved})` },
+    { id: 'rejected', label: `נדחה (${counts.rejected})` },
+  ]
+
+  return html`
+    <div>
+      <div class="page-header">
+        <div class="page-header-row">
+          <div>
+            <h1 class="page-title">הצעות</h1>
+            <p class="page-subtitle">ניהול כל הצעות העבודה של לורן</p>
+          </div>
+          <button class="btn btn-primary" onClick=${openAdd}>+ הוסף הצעה</button>
+        </div>
+      </div>
+
+      <div class="filter-tabs">
+        ${filterTabs.map(t => html`
+          <button key=${t.id} class=${'filter-tab' + (filter === t.id ? ' active' : '')} onClick=${() => setFilter(t.id)}>
+            ${t.label}
+          </button>
+        `)}
+      </div>
+
+      <div class="card">
+        ${filtered.length === 0 ? html`
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <div class="empty-text">
+              ${filter === 'all' ? 'אין הצעות עדיין — לחץ "+ הוסף הצעה"' : 'אין הצעות בסטטוס זה'}
+            </div>
+          </div>
+        ` : html`
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>מותג</th><th>פירוט העבודה</th><th>סכום</th><th>תאריך</th><th>סטטוס</th><th></th></tr>
+              </thead>
+              <tbody>
+                ${filtered.map(p => html`
+                  <tr key=${p.id}>
+                    <td class="td-bold">${p.brand}</td>
+                    <td><div class="td-desc" title=${p.description}>${p.description}</div></td>
+                    <td style=${{ fontWeight: 600 }}>${fmt(p.amount)}</td>
+                    <td style=${{ color: 'var(--gray-500)', fontSize: 13 }}>${new Date(p.date).toLocaleDateString('he-IL')}</td>
+                    <td><span class=${'badge ' + STATUS_CLASSES[p.status]}>${STATUS_LABELS[p.status]}</span></td>
+                    <td>
+                      <div style=${{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                        <button class="btn-ghost" onClick=${() => openEdit(p)}>✏️</button>
+                        <button class="btn-danger" onClick=${() => handleDelete(p.id)}>✕</button>
+                      </div>
+                    </td>
+                  </tr>
+                `)}
+              </tbody>
+            </table>
+          </div>
+        `}
+      </div>
+
+      ${showModal && html`
+        <div class="modal-overlay" onClick=${e => e.target === e.currentTarget && setShowModal(false)}>
+          <div class="modal">
+            <h2 class="modal-title">${editId ? 'עריכת הצעה' : 'הצעה חדשה'}</h2>
+
+            <div class="form-group">
+              <label class="form-label">שם המותג *</label>
+              <input class="form-control" placeholder="לדוגמה: Nike, Zara, Adidas..." value=${form.brand} onInput=${set('brand')} />
+            </div>
+            <div class="form-group">
+              <label class="form-label">פירוט העבודה *</label>
+              <textarea class="form-control" placeholder="תיאור מפורט של העבודה המבוקשת..." value=${form.description} onInput=${set('description')} />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">סכום (₪) *</label>
+                <input type="number" class="form-control" placeholder="0" value=${form.amount} onInput=${set('amount')} />
+              </div>
+              <div class="form-group">
+                <label class="form-label">תאריך *</label>
+                <input type="date" class="form-control" value=${form.date} onInput=${set('date')} />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">סטטוס</label>
+              <select class="form-control" value=${form.status} onChange=${set('status')}>
+                <option value="pending">ממתין</option>
+                <option value="approved">אושר</option>
+                <option value="rejected">נדחה</option>
+              </select>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" onClick=${handleSave}>${editId ? 'שמור שינויים' : 'הוסף הצעה'}</button>
+              <button class="btn btn-outline" onClick=${() => setShowModal(false)}>ביטול</button>
+            </div>
+          </div>
+        </div>
+      `}
+    </div>
+  `
+}
+
+// ── Finance Section ────────────────────────────────────────────────
+const EMPTY_FIN = { name: '', amount: '', date: '', note: '' }
+
+function FinanceSection({ title, items, onAdd, onDelete, type }) {
+  const [showModal, setShowModal] = useState(false)
+  const [form, setForm]           = useState(EMPTY_FIN)
+
+  const total  = items.reduce((s, i) => s + Number(i.amount), 0)
+  const sorted = [...items].sort((a, b) => new Date(b.date) - new Date(a.date))
+  const set    = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
+  const isInc  = type === 'green'
+
+  const openAdd = () => {
+    setForm({ ...EMPTY_FIN, date: today() })
+    setShowModal(true)
+  }
+
+  const handleSave = () => {
+    if (!form.name.trim() || !form.amount || !form.date) return
+    onAdd({ id: Date.now().toString(), ...form, amount: Number(form.amount) })
+    setShowModal(false)
+  }
+
+  return html`
+    <div class="card">
+      <div class="section-header">
+        <h2 class="section-title">${title}</h2>
+        <button class="btn btn-outline" style=${{ fontSize: 13, padding: '6px 13px' }} onClick=${openAdd}>+ הוסף</button>
+      </div>
+      <div class=${'finance-total ' + type}>${fmt(total)}</div>
+      <div class="finance-count">${items.length} רשומות</div>
+      <div class="divider" />
+
+      ${sorted.length === 0 ? html`
+        <div class="empty-state" style=${{ padding: '32px 0' }}>
+          <div class="empty-icon">${isInc ? '💰' : '📤'}</div>
+          <div class="empty-text">אין ${isInc ? 'הכנסות' : 'הוצאות'} עדיין</div>
+        </div>
+      ` : sorted.map(item => html`
+        <div key=${item.id} class="finance-item">
+          <div class="finance-item-info">
+            <div class="finance-item-name">${item.name}</div>
+            <div class="finance-item-date">
+              ${new Date(item.date).toLocaleDateString('he-IL')}${item.note ? ' · ' + item.note : ''}
+            </div>
+          </div>
+          <div class="finance-item-right">
+            <span class=${'finance-amount ' + type}>${fmt(item.amount)}</span>
+            <button class="btn-danger" onClick=${() => onDelete(item.id)}>✕</button>
+          </div>
+        </div>
+      `)}
+
+      ${showModal && html`
+        <div class="modal-overlay" onClick=${e => e.target === e.currentTarget && setShowModal(false)}>
+          <div class="modal">
+            <h2 class="modal-title">${isInc ? 'הכנסה חדשה' : 'הוצאה חדשה'}</h2>
+            <div class="form-group">
+              <label class="form-label">תיאור *</label>
+              <input class="form-control" placeholder=${isInc ? 'לדוגמה: שיתוף פעולה Nike' : 'לדוגמה: ציוד צילום'} value=${form.name} onInput=${set('name')} />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">סכום (₪) *</label>
+                <input type="number" class="form-control" placeholder="0" value=${form.amount} onInput=${set('amount')} />
+              </div>
+              <div class="form-group">
+                <label class="form-label">תאריך *</label>
+                <input type="date" class="form-control" value=${form.date} onInput=${set('date')} />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">הערה</label>
+              <input class="form-control" placeholder="הערה אופציונלית..." value=${form.note} onInput=${set('note')} />
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" onClick=${handleSave}>הוסף</button>
+              <button class="btn btn-outline" onClick=${() => setShowModal(false)}>ביטול</button>
+            </div>
+          </div>
+        </div>
+      `}
+    </div>
+  `
+}
+
+// ── Finances ───────────────────────────────────────────────────────
+function Finances({ incomes, expenses, setIncomes, setExpenses }) {
+  const totalIncome   = incomes.reduce((s, i) => s + Number(i.amount), 0)
+  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0)
+  const net = totalIncome - totalExpenses
+
+  return html`
+    <div>
+      <div class="page-header">
+        <h1 class="page-title">כספים</h1>
+        <p class="page-subtitle">ריכוז הכנסות אל מול הוצאות</p>
+      </div>
+
+      <div class="net-banner">
+        <div>
+          <div class="net-banner-label">רווח נקי</div>
+          <div class="net-banner-value">${fmt(net)}</div>
+        </div>
+        <div class="net-banner-stats">
+          <div>
+            <div class="net-stat-label">הכנסות</div>
+            <div class="net-stat-value" style=${{ color: '#4ade80' }}>${fmt(totalIncome)}</div>
+          </div>
+          <div>
+            <div class="net-stat-label">הוצאות</div>
+            <div class="net-stat-value" style=${{ color: '#f87171' }}>${fmt(totalExpenses)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="finances-grid">
+        <${FinanceSection}
+          title="הכנסות"
+          items=${incomes}
+          onAdd=${item => setIncomes([...incomes, item])}
+          onDelete=${id => setIncomes(incomes.filter(i => i.id !== id))}
+          type="green"
+        />
+        <${FinanceSection}
+          title="הוצאות"
+          items=${expenses}
+          onAdd=${item => setExpenses([...expenses, item])}
+          onDelete=${id => setExpenses(expenses.filter(e => e.id !== id))}
+          type="red"
+        />
+      </div>
+    </div>
+  `
+}
+
+// ── PIN Lock ───────────────────────────────────────────────────────
+const PIN = '0406'
+
+function PinScreen({ onUnlock }) {
+  const [value, setValue]   = useState('')
+  const [error, setError]   = useState(false)
+
+  const handleChange = (e) => {
+    const v = e.target.value.replace(/\D/g, '').slice(0, 4)
+    setValue(v)
+    setError(false)
+    if (v.length === 4) {
+      if (v === PIN) {
+        sessionStorage.setItem('pin-ok', '1')
+        onUnlock()
+      } else {
+        setError(true)
+        setTimeout(() => { setValue(''); setError(false) }, 800)
+      }
+    }
+  }
+
+  return html`
+    <div style=${{
+      position: 'fixed', inset: 0, background: 'var(--black)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', gap: 28, direction: 'ltr'
+    }}>
+      <div style=${{ textAlign: 'center' }}>
+        <div style=${{ fontSize: 24, fontWeight: 800, color: 'var(--white)', marginBottom: 8, letterSpacing: -0.5 }}>Lauren Liv</div>
+        <div style=${{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>הכנס קוד כניסה</div>
+      </div>
+
+      <input
+        type="password"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        maxLength="4"
+        autoFocus
+        value=${value}
+        onInput=${handleChange}
+        style=${{
+          width: 160,
+          padding: '14px 20px',
+          fontSize: 28,
+          letterSpacing: 12,
+          textAlign: 'center',
+          background: error ? 'rgba(220,38,38,0.15)' : 'rgba(255,255,255,0.08)',
+          border: error ? '1.5px solid rgba(220,38,38,0.6)' : '1.5px solid rgba(255,255,255,0.12)',
+          borderRadius: 14,
+          color: 'var(--white)',
+          outline: 'none',
+          fontFamily: 'var(--font)',
+          transition: 'all 0.2s',
+          caretColor: 'white'
+        }}
+        placeholder="••••"
+      />
+      ${error && html`<div style=${{ fontSize: 13, color: '#f87171' }}>קוד שגוי, נסה שוב</div>`}
+    </div>
+  `
+}
+
+// ── App ────────────────────────────────────────────────────────────
+function App() {
+  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('pin-ok') === '1')
+  if (!unlocked) return html`<${PinScreen} onUnlock=${() => setUnlocked(true)} />`
+  const [activeTab, setActiveTab] = useState('dashboard')
+  const [data, setData] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : DEFAULT_DATA
+    } catch { return DEFAULT_DATA }
+  })
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  }, [data])
+
+  const setProposals = (proposals) => setData(d => ({ ...d, proposals }))
+  const setIncomes   = (incomes)   => setData(d => ({ ...d, incomes }))
+  const setExpenses  = (expenses)  => setData(d => ({ ...d, expenses }))
+
+  return html`
+    <div class="app-layout">
+      <${Sidebar} activeTab=${activeTab} setActiveTab=${setActiveTab} />
+      <main class="main-content">
+        ${activeTab === 'dashboard' && html`
+          <${Dashboard}
+            proposals=${data.proposals}
+            incomes=${data.incomes}
+            expenses=${data.expenses}
+            setActiveTab=${setActiveTab}
+          />`}
+        ${activeTab === 'proposals' && html`
+          <${Proposals} proposals=${data.proposals} setProposals=${setProposals} />`}
+        ${activeTab === 'finances' && html`
+          <${Finances}
+            incomes=${data.incomes}
+            expenses=${data.expenses}
+            setIncomes=${setIncomes}
+            setExpenses=${setExpenses}
+          />`}
+      </main>
+    </div>
+  `
+}
+
+render(html`<${App} />`, document.getElementById('root'))
+</script>
+</body>
+</html>
