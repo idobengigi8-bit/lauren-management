@@ -87,6 +87,8 @@
     .badge-pending { background: var(--amber-light); color: var(--amber); }
     .badge-approved { background: var(--black); color: var(--white); }
     .badge-rejected { background: var(--red-light); color: var(--red); }
+    .badge-overdue { background: #FEE2E2; color: #991B1B; font-weight: 700; animation: pulse-red 1.8s ease-in-out infinite; }
+    @keyframes pulse-red { 0%,100% { opacity: 1; } 50% { opacity: 0.65; } }
 
     /* Tables */
     .table-wrapper { overflow-x: auto; }
@@ -251,6 +253,9 @@ const today = () => new Date().toISOString().split('T')[0]
 
 const STATUS_LABELS = { pending: 'ממתין', approved: 'אושר', rejected: 'נדחה' }
 const STATUS_CLASSES = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' }
+const isOverdue = (p) => p.status === 'pending' && p.date < today()
+const badgeClass = (p) => isOverdue(p) ? 'badge-overdue' : STATUS_CLASSES[p.status]
+const badgeLabel = (p) => isOverdue(p) ? '⚠ באיחור' : STATUS_LABELS[p.status]
 
 // ── Sidebar ────────────────────────────────────────────────────────
 function Sidebar({ activeTab, setActiveTab }) {
@@ -346,7 +351,7 @@ function Dashboard({ proposals, incomes, expenses, setActiveTab }) {
                     <td><div class="td-desc" title=${p.description}>${p.description}</div></td>
                     <td style=${{ fontWeight: 600 }}>${fmt(p.amount)}</td>
                     <td style=${{ color: 'var(--gray-500)', fontSize: 13 }}>${new Date(p.date).toLocaleDateString('he-IL')}</td>
-                    <td><span class=${'badge ' + STATUS_CLASSES[p.status]}>${STATUS_LABELS[p.status]}</span></td>
+                    <td><span class=${'badge ' + badgeClass(p)}>${badgeLabel(p)}</span></td>
                   </tr>
                 `)}
               </tbody>
@@ -369,13 +374,14 @@ function Proposals({ proposals, onReload }) {
 
   const counts = {
     all:      proposals.length,
-    pending:  proposals.filter(p => p.status === 'pending').length,
+    overdue:  proposals.filter(p => isOverdue(p)).length,
+    pending:  proposals.filter(p => p.status === 'pending' && !isOverdue(p)).length,
     approved: proposals.filter(p => p.status === 'approved').length,
     rejected: proposals.filter(p => p.status === 'rejected').length,
   }
 
   const filtered = proposals
-    .filter(p => filter === 'all' || p.status === filter)
+    .filter(p => filter === 'all' || (filter === 'overdue' ? isOverdue(p) : p.status === filter && !isOverdue(p)))
     .sort((a, b) => new Date(b.date) - new Date(a.date))
 
   const openAdd = () => {
@@ -412,6 +418,7 @@ function Proposals({ proposals, onReload }) {
 
   const filterTabs = [
     { id: 'all',      label: `הכל (${counts.all})` },
+    { id: 'overdue',  label: `⚠ באיחור (${counts.overdue})` },
     { id: 'pending',  label: `ממתין (${counts.pending})` },
     { id: 'approved', label: `אושר (${counts.approved})` },
     { id: 'rejected', label: `נדחה (${counts.rejected})` },
@@ -458,7 +465,7 @@ function Proposals({ proposals, onReload }) {
                     <td><div class="td-desc" title=${p.description}>${p.description}</div></td>
                     <td style=${{ fontWeight: 600 }}>${fmt(p.amount)}</td>
                     <td style=${{ color: 'var(--gray-500)', fontSize: 13 }}>${new Date(p.date).toLocaleDateString('he-IL')}</td>
-                    <td><span class=${'badge ' + STATUS_CLASSES[p.status]}>${STATUS_LABELS[p.status]}</span></td>
+                    <td><span class=${'badge ' + badgeClass(p)}>${badgeLabel(p)}</span></td>
                     <td>
                       <div style=${{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                         <button class="btn-ghost" onClick=${() => openEdit(p)}>✏️</button>
