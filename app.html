@@ -172,10 +172,16 @@
 import { h, render } from 'https://esm.sh/preact@10.19.3'
 import { useState, useEffect } from 'https://esm.sh/preact@10.19.3/hooks'
 import htm from 'https://esm.sh/htm@3.1.1'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const html = htm.bind(h)
 
+// ── Supabase ───────────────────────────────────────────────────────
+const sb = createClient(
+  'https://nqtbetkdhwrhcnwwbklc.supabase.co',
+  'sb_publishable_JqrTx58alqSOR_sGEMCHBA_il4jloZO'
+)
+
 // ── Utilities ──────────────────────────────────────────────────────
-const STORAGE_KEY = 'lauren-mgmt-v1'
 const DEFAULT_DATA = { proposals: [], incomes: [], expenses: [] }
 
 const fmt = (amount) =>
@@ -295,7 +301,7 @@ function Dashboard({ proposals, incomes, expenses, setActiveTab }) {
 // ── Proposals ──────────────────────────────────────────────────────
 const EMPTY_PROPOSAL = { brand: '', description: '', amount: '', date: '', status: 'pending' }
 
-function Proposals({ proposals, setProposals }) {
+function Proposals({ proposals, onReload }) {
   const [filter, setFilter]     = useState('all')
   const [showModal, setShowModal] = useState(false)
   const [editId, setEditId]     = useState(null)
@@ -326,18 +332,22 @@ function Proposals({ proposals, setProposals }) {
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.brand.trim() || !form.amount || !form.date) return
     if (editId) {
-      setProposals(proposals.map(p => p.id === editId ? { ...p, ...form, amount: Number(form.amount) } : p))
+      await sb.from('proposals').update({ ...form, amount: Number(form.amount) }).eq('id', editId)
     } else {
-      setProposals([...proposals, { id: Date.now().toString(), ...form, amount: Number(form.amount) }])
+      await sb.from('proposals').insert({ ...form, amount: Number(form.amount) })
     }
     setShowModal(false)
+    onReload()
   }
 
-  const handleDelete = (id) => {
-    if (window.confirm('למחוק הצעה זו?')) setProposals(proposals.filter(p => p.id !== id))
+  const handleDelete = async (id) => {
+    if (window.confirm('למחוק הצעה זו?')) {
+      await sb.from('proposals').delete().eq('id', id)
+      onReload()
+    }
   }
 
   const filterTabs = [
@@ -462,9 +472,9 @@ function FinanceSection({ title, items, onAdd, onDelete, type }) {
     setShowModal(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim() || !form.amount || !form.date) return
-    onAdd({ id: Date.now().toString(), ...form, amount: Number(form.amount) })
+    await onAdd({ ...form, amount: Number(form.amount) })
     setShowModal(false)
   }
 
@@ -532,7 +542,7 @@ function FinanceSection({ title, items, onAdd, onDelete, type }) {
 }
 
 // ── Finances ───────────────────────────────────────────────────────
-function Finances({ incomes, expenses, setIncomes, setExpenses }) {
+function Finances({ incomes, expenses, onReload }) {
   const totalIncome   = incomes.reduce((s, i) => s + Number(i.amount), 0)
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0)
   const net = totalIncome - totalExpenses
@@ -565,15 +575,15 @@ function Finances({ incomes, expenses, setIncomes, setExpenses }) {
         <${FinanceSection}
           title="הכנסות"
           items=${incomes}
-          onAdd=${item => setIncomes([...incomes, item])}
-          onDelete=${id => setIncomes(incomes.filter(i => i.id !== id))}
+          onAdd=${async item => { await sb.from('incomes').insert(item); onReload() }}
+          onDelete=${async id => { await sb.from('incomes').delete().eq('id', id); onReload() }}
           type="green"
         />
         <${FinanceSection}
           title="הוצאות"
           items=${expenses}
-          onAdd=${item => setExpenses([...expenses, item])}
-          onDelete=${id => setExpenses(expenses.filter(e => e.id !== id))}
+          onAdd=${async item => { await sb.from('expenses').insert(item); onReload() }}
+          onDelete=${async id => { await sb.from('expenses').delete().eq('id', id); onReload() }}
           type="red"
         />
       </div>
@@ -648,21 +658,24 @@ function PinScreen({ onUnlock }) {
 function App() {
   const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('pin-ok') === '1')
   if (!unlocked) return html`<${PinScreen} onUnlock=${() => setUnlocked(true)} />`
+
   const [activeTab, setActiveTab] = useState('dashboard')
-  const [data, setData] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      return saved ? JSON.parse(saved) : DEFAULT_DATA
-    } catch { return DEFAULT_DATA }
-  })
+  const [data, setData] = useState(DEFAULT_DATA)
+  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-  }, [data])
+  const reload = async () => {
+    const [p, i, e] = await Promise.all([
+      sb.from('proposals').select('*').order('created_at', { ascending: false }),
+      sb.from('incomes').select('*').order('created_at', { ascending: false }),
+      sb.from('expenses').select('*').order('created_at', { ascending: false }),
+    ])
+    setData({ proposals: p.data || [], incomes: i.data || [], expenses: e.data || [] })
+    setLoading(false)
+  }
 
-  const setProposals = (proposals) => setData(d => ({ ...d, proposals }))
-  const setIncomes   = (incomes)   => setData(d => ({ ...d, incomes }))
-  const setExpenses  = (expenses)  => setData(d => ({ ...d, expenses }))
+  useEffect(() => { reload() }, [])
+
+  if (loading) return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:var(--font);font-size:16px;color:#71717a">טוען...</div>`
 
   return html`
     <div class="app-layout">
@@ -676,13 +689,12 @@ function App() {
             setActiveTab=${setActiveTab}
           />`}
         ${activeTab === 'proposals' && html`
-          <${Proposals} proposals=${data.proposals} setProposals=${setProposals} />`}
+          <${Proposals} proposals=${data.proposals} onReload=${reload} />`}
         ${activeTab === 'finances' && html`
           <${Finances}
             incomes=${data.incomes}
             expenses=${data.expenses}
-            setIncomes=${setIncomes}
-            setExpenses=${setExpenses}
+            onReload=${reload}
           />`}
       </main>
     </div>
